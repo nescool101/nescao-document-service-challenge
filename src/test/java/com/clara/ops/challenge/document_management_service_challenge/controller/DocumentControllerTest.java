@@ -1,9 +1,8 @@
 package com.clara.ops.challenge.document_management_service_challenge.controller;
 
-import com.challenge.document.controller.DocumentController;
-import com.challenge.document.dto.DocumentUploadRequest;
-import com.challenge.document.model.Document;
-import com.challenge.document.service.DocumentService;
+import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
+import com.clara.ops.challenge.document_management_service_challenge.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.service.DocumentService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

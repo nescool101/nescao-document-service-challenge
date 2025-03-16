@@ -88,18 +88,18 @@ To use the **Access Key** and **Secret Key**, you should configure them as globa
 
 Run the following commands in your terminal:
 
-export MINIO_ACCESS_KEY="your-access-key"  
-export MINIO_SECRET_KEY="your-secret-key"
+export MINIO_ACCESS_KEY="access-key"  
+export MINIO_SECRET_KEY="secret-key"
 
 To make these variables persistent, add them to your `~/.bashrc` or `~/.zshrc` file.
 
 ### 🔹 Option 2: Using `docker-compose.yml`
 
-Modify your `docker-compose.yml` file to include the credentials as environment variables:
+Modify the `docker-compose.yml` file to include the credentials as environment variables:
 
 environment:  
-MINIO_ACCESS_KEY: "your-access-key"  
-MINIO_SECRET_KEY: "your-secret-key"
+MINIO_ACCESS_KEY: "access-key"  
+MINIO_SECRET_KEY: "secret-key"
 
 ---
 

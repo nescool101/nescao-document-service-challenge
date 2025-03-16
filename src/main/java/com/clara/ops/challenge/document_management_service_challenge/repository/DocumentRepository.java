@@ -1,6 +1,6 @@
-package com.challenge.document.repository;
+package com.clara.ops.challenge.document_management_service_challenge.repository;
 
-import com.challenge.document.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.model.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
