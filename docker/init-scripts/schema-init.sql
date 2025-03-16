@@ -1,5 +1,4 @@
--- Remove the Spring Batch comment as it's not relevant for this schema
--- Create and set schema
+-- Create schema (this will be executed with postgres admin privileges during container initialization)
 CREATE SCHEMA IF NOT EXISTS document_schema;
 
 -- Switch to the document_schema
@@ -33,4 +32,9 @@ CREATE INDEX IF NOT EXISTS idx_document_tags_tag ON document_schema.document_tag
 
 -- Create composite index for user_id and document_name for faster lookups
 CREATE INDEX IF NOT EXISTS idx_documents_user_document ON document_schema.documents(user_id, document_name);
+
+-- Grant privileges to the application user
+GRANT USAGE ON SCHEMA document_schema TO challenge_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA document_schema TO challenge_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA document_schema TO challenge_user;
 

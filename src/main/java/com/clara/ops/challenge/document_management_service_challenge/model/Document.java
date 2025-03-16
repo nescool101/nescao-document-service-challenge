@@ -1,4 +1,4 @@
-package com.challenge.document.model;
+package com.clara.ops.challenge.document_management_service_challenge.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,9 +1,9 @@
-package com.challenge.document.controller;
+package com.clara.ops.challenge.document_management_service_challenge.controller;
 
-import com.challenge.document.dto.DocumentUploadRequest;
-import com.challenge.document.dto.DownloadUrlResponse;
-import com.challenge.document.model.Document;
-import com.challenge.document.service.DocumentService;
+import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
+import com.clara.ops.challenge.document_management_service_challenge.dto.DownloadUrlResponse;
+import com.clara.ops.challenge.document_management_service_challenge.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.service.DocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

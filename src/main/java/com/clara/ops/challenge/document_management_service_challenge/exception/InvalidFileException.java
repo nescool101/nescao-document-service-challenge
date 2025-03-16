@@ -1,4 +1,4 @@
-package com.challenge.document.exception;
+package com.clara.ops.challenge.document_management_service_challenge.exception;
 
 /**
  * Exception thrown when file validation fails.

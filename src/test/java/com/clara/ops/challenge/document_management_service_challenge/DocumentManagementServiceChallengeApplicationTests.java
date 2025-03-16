@@ -7,5 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class DocumentManagementServiceChallengeApplicationTests {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() {
+    // This test will fail if the application context cannot start
+  }
 }

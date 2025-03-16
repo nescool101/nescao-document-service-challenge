@@ -1,11 +1,11 @@
-package com.challenge.document.service;
+package com.clara.ops.challenge.document_management_service_challenge.service;
 
-import com.challenge.document.dto.DocumentUploadRequest;
-import com.challenge.document.exception.DocumentNotFoundException;
-import com.challenge.document.exception.DocumentUploadException;
-import com.challenge.document.exception.InvalidFileException;
-import com.challenge.document.model.Document;
-import com.challenge.document.repository.DocumentRepository;
+import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
+import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentNotFoundException;
+import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentUploadException;
+import com.clara.ops.challenge.document_management_service_challenge.exception.InvalidFileException;
+import com.clara.ops.challenge.document_management_service_challenge.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.repository.DocumentRepository;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;

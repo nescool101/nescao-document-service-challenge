@@ -1,4 +1,4 @@
-package com.challenge.document.dto;
+package com.clara.ops.challenge.document_management_service_challenge.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
