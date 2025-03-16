@@ -15,6 +15,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
 
+/**
+ * Service class handling document management operations.
+ * Manages document uploads, storage in MinIO, and metadata persistence.
+ */
 @Service
 @Slf4j
 public class DocumentService {
@@ -29,6 +33,15 @@ public class DocumentService {
         this.documentRepository = documentRepository;
     }
 
+    /**
+     * Uploads a document to MinIO and saves its metadata to the database.
+     *
+     * @param request The metadata for the document
+     * @param file The PDF file to upload
+     * @return The saved document metadata
+     * @throws DocumentUploadException if the upload to MinIO fails
+     * @throws InvalidFileException if the file validation fails
+     */
     public Document uploadDocument(DocumentUploadRequest request, MultipartFile file) {
         validateFile(file);
         
@@ -62,6 +75,12 @@ public class DocumentService {
         }
     }
     
+    /**
+     * Validates the uploaded file.
+     *
+     * @param file The file to validate
+     * @throws InvalidFileException if the file is empty or not a PDF
+     */
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
             throw new InvalidFileException("File is empty");
@@ -71,6 +90,13 @@ public class DocumentService {
         }
     }
     
+    /**
+     * Generates the MinIO path for storing the document.
+     *
+     * @param userId The ID of the user uploading the document
+     * @param documentName The name of the document
+     * @return The generated MinIO path
+     */
     private String generateMinioPath(String userId, String documentName) {
         return String.format("%s/%s", userId, documentName);
     }

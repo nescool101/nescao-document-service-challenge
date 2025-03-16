@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
+/**
+ * Data Transfer Object (DTO) for document upload requests.
+ * Contains the metadata information required when uploading a new document.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

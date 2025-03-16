@@ -1,0 +1,5 @@
+POSTGRESQL_USERNAME=challenge_user
+POSTGRESQL_PASSWORD=challenge_password
+POSTGRESQL_POSTGRES_PASSWORD=postgres_password
+MINIO_ROOT_USER=minio_admin
+MINIO_ROOT_PASSWORD=minio_password
