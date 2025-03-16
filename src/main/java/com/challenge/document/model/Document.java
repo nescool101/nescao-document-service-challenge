@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+/**
+ * Entity class representing a document in the system.
+ * This class maps to the 'documents' table in the database and stores metadata about uploaded PDF documents.
+ */
 @Entity
 @Table(name = "documents")
 @Data
