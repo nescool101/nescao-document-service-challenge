@@ -1,18 +1,24 @@
 package com.challenge.document.service;
 
 import com.challenge.document.dto.DocumentUploadRequest;
+import com.challenge.document.exception.DocumentNotFoundException;
 import com.challenge.document.exception.DocumentUploadException;
 import com.challenge.document.exception.InvalidFileException;
 import com.challenge.document.model.Document;
 import com.challenge.document.repository.DocumentRepository;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -72,6 +78,58 @@ public class DocumentService {
         } catch (Exception e) {
             log.error("Error uploading document", e);
             throw new DocumentUploadException("Failed to upload document", e);
+        }
+    }
+    
+    /**
+     * Searches for documents based on the provided criteria.
+     *
+     * @param userId The ID of the user whose documents to search
+     * @param documentName Optional document name to filter by
+     * @param tag Optional tag to filter by
+     * @param pageable Pagination information
+     * @return A page of documents matching the criteria
+     */
+    public Page<Document> searchDocuments(String userId, String documentName, String tag, Pageable pageable) {
+        // This is a simplified implementation. In a real application, you might want to use
+        // a more sophisticated search mechanism like Spring Data JPA Specifications or QueryDSL
+        if (documentName != null && tag != null) {
+            return documentRepository.findByUserIdAndDocumentNameContainingAndTagsContaining(
+                    userId, documentName, tag, pageable);
+        } else if (documentName != null) {
+            return documentRepository.findByUserIdAndDocumentNameContaining(userId, documentName, pageable);
+        } else if (tag != null) {
+            return documentRepository.findByUserIdAndTagsContaining(userId, tag, pageable);
+        } else {
+            return documentRepository.findByUserId(userId, pageable);
+        }
+    }
+    
+    /**
+     * Generates a pre-signed URL for downloading a document.
+     *
+     * @param documentId The ID of the document to download
+     * @return A pre-signed URL for downloading the document
+     * @throws DocumentNotFoundException if the document is not found
+     * @throws RuntimeException if URL generation fails
+     */
+    public String generateDownloadUrl(Long documentId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new DocumentNotFoundException(documentId));
+        
+        try {
+            // Generate a pre-signed URL that expires after 1 hour
+            return minioClient.getPresignedObjectUrl(
+                GetPresignedObjectUrlArgs.builder()
+                    .bucket(bucketName)
+                    .object(document.getMinioPath())
+                    .method(Method.GET)
+                    .expiry(1, TimeUnit.HOURS)
+                    .build()
+            );
+        } catch (Exception e) {
+            log.error("Error generating download URL for document ID: {}", documentId, e);
+            throw new RuntimeException("Failed to generate download URL", e);
         }
     }
     
