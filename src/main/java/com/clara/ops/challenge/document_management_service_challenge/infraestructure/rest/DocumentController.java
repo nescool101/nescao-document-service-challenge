@@ -1,9 +1,9 @@
-package com.clara.ops.challenge.document_management_service_challenge.controller;
+package com.clara.ops.challenge.document_management_service_challenge.infraestructure.rest;
 
+import com.clara.ops.challenge.document_management_service_challenge.domain.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.domain.service.DocumentServiceInterface;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DownloadUrlResponse;
-import com.clara.ops.challenge.document_management_service_challenge.model.Document;
-import com.clara.ops.challenge.document_management_service_challenge.service.DocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 public class DocumentController {
 
-    private final DocumentService documentService;
+    private final DocumentServiceInterface documentService;
 
     @PostMapping
     public ResponseEntity<Document> uploadDocument(
@@ -58,5 +58,19 @@ public class DocumentController {
         String downloadUrl = documentService.generateDownloadUrl(documentId);
         DownloadUrlResponse response = new DownloadUrlResponse(downloadUrl);
         return ResponseEntity.ok(response);
+    }
+    
+    @DeleteMapping("/{documentId}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable Long documentId) {
+        documentService.deleteDocument(documentId);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @PutMapping("/{documentId}")
+    public ResponseEntity<Document> updateDocument(
+            @PathVariable Long documentId,
+            @RequestBody DocumentUploadRequest request) {
+        Document document = documentService.updateDocument(documentId, request);
+        return ResponseEntity.ok(document);
     }
 }

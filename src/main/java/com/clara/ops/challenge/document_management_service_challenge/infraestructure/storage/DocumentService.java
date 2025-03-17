@@ -1,20 +1,23 @@
-package com.clara.ops.challenge.document_management_service_challenge.service;
+package com.clara.ops.challenge.document_management_service_challenge.infraestructure.storage;
 
+import com.clara.ops.challenge.document_management_service_challenge.domain.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.domain.repository.RepositoryInterface;
+import com.clara.ops.challenge.document_management_service_challenge.domain.service.DocumentServiceInterface;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
 import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentNotFoundException;
 import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentUploadException;
 import com.clara.ops.challenge.document_management_service_challenge.exception.InvalidFileException;
-import com.clara.ops.challenge.document_management_service_challenge.model.Document;
-import com.clara.ops.challenge.document_management_service_challenge.repository.DocumentRepository;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -22,32 +25,28 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * Service class handling document management operations.
+ * Implementation of DocumentServiceInterface that handles document management operations.
  * Manages document uploads, storage in MinIO, and metadata persistence.
  */
 @Service
 @Slf4j
-public class DocumentService {
+public class DocumentService implements DocumentServiceInterface {
     private final MinioClient minioClient;
-    private final DocumentRepository documentRepository;
+    private final RepositoryInterface documentRepository;
     
     @Value("${minio.bucket.name}")
     private String bucketName;
 
-    public DocumentService(MinioClient minioClient, DocumentRepository documentRepository) {
+    public DocumentService(MinioClient minioClient, RepositoryInterface documentRepository) {
         this.minioClient = minioClient;
         this.documentRepository = documentRepository;
     }
 
     /**
-     * Uploads a document to MinIO and saves its metadata to the database.
-     *
-     * @param request The metadata for the document
-     * @param file The PDF file to upload
-     * @return The saved document metadata
-     * @throws DocumentUploadException if the upload to MinIO fails
-     * @throws InvalidFileException if the file validation fails
+     * {@inheritDoc}
      */
+    @Override
+    @Transactional
     public Document uploadDocument(DocumentUploadRequest request, MultipartFile file) {
         validateFile(file);
         
@@ -73,6 +72,7 @@ public class DocumentService {
             document.setFileSize(file.getSize());
             document.setFileType("application/pdf");
             document.setCreatedAt(LocalDateTime.now());
+            // Removed setLastModifiedAt as it doesn't exist in the Document model
             
             return documentRepository.save(document);
         } catch (Exception e) {
@@ -82,17 +82,10 @@ public class DocumentService {
     }
     
     /**
-     * Searches for documents based on the provided criteria.
-     *
-     * @param userId The ID of the user whose documents to search
-     * @param documentName Optional document name to filter by
-     * @param tag Optional tag to filter by
-     * @param pageable Pagination information
-     * @return A page of documents matching the criteria
+     * {@inheritDoc}
      */
+    @Override
     public Page<Document> searchDocuments(String userId, String documentName, String tag, Pageable pageable) {
-        // This is a simplified implementation. In a real application, you might want to use
-        // a more sophisticated search mechanism like Spring Data JPA Specifications or QueryDSL
         if (documentName != null && tag != null) {
             return documentRepository.findByUserIdAndDocumentNameContainingAndTagsContaining(
                     userId, documentName, tag, pageable);
@@ -106,16 +99,11 @@ public class DocumentService {
     }
     
     /**
-     * Generates a pre-signed URL for downloading a document.
-     *
-     * @param documentId The ID of the document to download
-     * @return A pre-signed URL for downloading the document
-     * @throws DocumentNotFoundException if the document is not found
-     * @throws RuntimeException if URL generation fails
+     * {@inheritDoc}
      */
+    @Override
     public String generateDownloadUrl(Long documentId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(documentId));
+        Document document = getDocumentById(documentId);
         
         try {
             // Generate a pre-signed URL that expires after 1 hour
@@ -131,6 +119,57 @@ public class DocumentService {
             log.error("Error generating download URL for document ID: {}", documentId, e);
             throw new RuntimeException("Failed to generate download URL", e);
         }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Document getDocumentById(Long documentId) {
+        // Use a direct call to the repository interface method to avoid ambiguity
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new DocumentNotFoundException(documentId));
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void deleteDocument(Long documentId) {
+        Document document = getDocumentById(documentId);
+        
+        try {
+            // Delete from MinIO
+            minioClient.removeObject(
+                RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(document.getMinioPath())
+                    .build()
+            );
+            
+            // Delete from database
+            documentRepository.delete(document);
+        } catch (Exception e) {
+            log.error("Error deleting document with ID: {}", documentId, e);
+            throw new RuntimeException("Failed to delete document", e);
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public Document updateDocument(Long documentId, DocumentUploadRequest request) {
+        Document document = getDocumentById(documentId);
+        
+        // Update document metadata
+        document.setDocumentName(request.getDocumentName());
+        document.setTags(request.getTags());
+        // Removed setLastModifiedAt as it doesn't exist in the Document model
+        
+        return documentRepository.save(document);
     }
     
     /**

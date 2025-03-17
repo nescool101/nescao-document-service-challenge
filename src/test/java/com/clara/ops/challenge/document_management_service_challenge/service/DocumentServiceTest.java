@@ -1,11 +1,12 @@
 package com.clara.ops.challenge.document_management_service_challenge.service;
 
+import com.clara.ops.challenge.document_management_service_challenge.domain.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.domain.repository.RepositoryInterface;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
 import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentNotFoundException;
 import com.clara.ops.challenge.document_management_service_challenge.exception.DocumentUploadException;
 import com.clara.ops.challenge.document_management_service_challenge.exception.InvalidFileException;
-import com.clara.ops.challenge.document_management_service_challenge.model.Document;
-import com.clara.ops.challenge.document_management_service_challenge.repository.DocumentRepository;
+import com.clara.ops.challenge.document_management_service_challenge.infraestructure.storage.DocumentService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -41,7 +42,7 @@ class DocumentServiceTest {
     private MinioClient minioClient;
 
     @Mock
-    private DocumentRepository documentRepository;
+    private RepositoryInterface documentRepository;
 
     private DocumentService documentService;
 
@@ -211,7 +212,7 @@ class DocumentServiceTest {
     void searchDocuments_shouldFilterByDocumentName_whenDocumentNameProvided() {
         // Arrange
         String userId = "user123";
-        String documentName = "doc1";
+        String documentName = "doc";
         Pageable pageable = PageRequest.of(0, 10);
         
         Document doc1 = new Document();
@@ -219,10 +220,11 @@ class DocumentServiceTest {
         doc1.setUserId(userId);
         doc1.setDocumentName("doc1.pdf");
         
-        List<Document> documents = Arrays.asList(doc1);
+        List<Document> documents = List.of(doc1);
         Page<Document> page = new PageImpl<>(documents, pageable, documents.size());
         
-        when(documentRepository.findByUserIdAndDocumentNameContaining(userId, documentName, pageable)).thenReturn(page);
+        when(documentRepository.findByUserIdAndDocumentNameContaining(userId, documentName, pageable))
+                .thenReturn(page);
         
         // Act
         Page<Document> result = documentService.searchDocuments(userId, documentName, null, pageable);
@@ -242,45 +244,77 @@ class DocumentServiceTest {
         String tag = "important";
         Pageable pageable = PageRequest.of(0, 10);
         
-        Document doc2 = new Document();
-        doc2.setId(2L);
-        doc2.setUserId(userId);
-        doc2.setDocumentName("doc2.pdf");
-        doc2.setTags(new HashSet<>(Arrays.asList("important")));
+        Document doc1 = new Document();
+        doc1.setId(1L);
+        doc1.setUserId(userId);
+        doc1.setDocumentName("doc1.pdf");
+        doc1.setTags(new HashSet<>(Arrays.asList("important", "work")));
         
-        List<Document> documents = Arrays.asList(doc2);
+        List<Document> documents = List.of(doc1);
         Page<Document> page = new PageImpl<>(documents, pageable, documents.size());
         
-        when(documentRepository.findByUserIdAndTagsContaining(userId, tag, pageable)).thenReturn(page);
+        when(documentRepository.findByUserIdAndTagsContaining(userId, tag, pageable))
+                .thenReturn(page);
         
         // Act
         Page<Document> result = documentService.searchDocuments(userId, null, tag, pageable);
         
         // Assert
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent()).containsExactly(doc2);
+        assertThat(result.getContent()).containsExactly(doc1);
         
         verify(documentRepository).findByUserIdAndTagsContaining(userId, tag, pageable);
         verifyNoMoreInteractions(documentRepository);
     }
     
     @Test
-    void generateDownloadUrl_shouldReturnPresignedUrl_whenDocumentExists() throws Exception {
+    void searchDocuments_shouldFilterByDocumentNameAndTag_whenBothProvided() {
+        // Arrange
+        String userId = "user123";
+        String documentName = "doc";
+        String tag = "important";
+        Pageable pageable = PageRequest.of(0, 10);
+        
+        Document doc1 = new Document();
+        doc1.setId(1L);
+        doc1.setUserId(userId);
+        doc1.setDocumentName("doc1.pdf");
+        doc1.setTags(new HashSet<>(Arrays.asList("important", "work")));
+        
+        List<Document> documents = List.of(doc1);
+        Page<Document> page = new PageImpl<>(documents, pageable, documents.size());
+        
+        when(documentRepository.findByUserIdAndDocumentNameContainingAndTagsContaining(
+                userId, documentName, tag, pageable))
+                .thenReturn(page);
+        
+        // Act
+        Page<Document> result = documentService.searchDocuments(userId, documentName, tag, pageable);
+        
+        // Assert
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).containsExactly(doc1);
+        
+        verify(documentRepository).findByUserIdAndDocumentNameContainingAndTagsContaining(
+                userId, documentName, tag, pageable);
+        verifyNoMoreInteractions(documentRepository);
+    }
+    
+    @Test
+    void generateDownloadUrl_shouldReturnPresignedUrl() throws Exception {
         // Arrange
         Long documentId = 1L;
-        String userId = "user123";
-        String documentName = "test-document.pdf";
-        String minioPath = userId + "/" + documentName;
-        String expectedUrl = "https://minio:9000/document-bucket/user123/test-document.pdf?X-Amz-Algorithm=...";
-        
         Document document = new Document();
         document.setId(documentId);
-        document.setUserId(userId);
-        document.setDocumentName(documentName);
-        document.setMinioPath(minioPath);
+        document.setUserId("user123");
+        document.setDocumentName("doc1.pdf");
+        document.setMinioPath("user123/doc1.pdf");
+        
+        String expectedUrl = "https://minio-server/document-bucket/user123/doc1.pdf?token=xyz";
         
         when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
-        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenReturn(expectedUrl);
+        when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
+                .thenReturn(expectedUrl);
         
         // Act
         String result = documentService.generateDownloadUrl(documentId);
@@ -293,18 +327,111 @@ class DocumentServiceTest {
     }
     
     @Test
-    void generateDownloadUrl_shouldThrowDocumentNotFoundException_whenDocumentDoesNotExist() {
+    void generateDownloadUrl_shouldThrowDocumentNotFoundException_whenDocumentNotFound() {
         // Arrange
-        Long documentId = 999L;
+        Long documentId = 1L;
         
         when(documentRepository.findById(documentId)).thenReturn(Optional.empty());
         
         // Act & Assert
         assertThatThrownBy(() -> documentService.generateDownloadUrl(documentId))
                 .isInstanceOf(DocumentNotFoundException.class)
-                .hasMessageContaining("Document not found with id: " + documentId);
+                .hasMessageContaining(String.valueOf(documentId));
         
         verify(documentRepository).findById(documentId);
         verifyNoInteractions(minioClient);
+    }
+    
+    @Test
+    void getDocumentById_shouldReturnDocument_whenDocumentExists() {
+        // Arrange
+        Long documentId = 1L;
+        Document document = new Document();
+        document.setId(documentId);
+        document.setUserId("user123");
+        document.setDocumentName("doc1.pdf");
+        
+        when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
+        
+        // Act
+        Document result = documentService.getDocumentById(documentId);
+        
+        // Assert
+        assertThat(result).isEqualTo(document);
+        
+        verify(documentRepository).findById(documentId);
+    }
+    
+    @Test
+    void getDocumentById_shouldThrowDocumentNotFoundException_whenDocumentNotFound() {
+        // Arrange
+        Long documentId = 1L;
+        
+        when(documentRepository.findById(documentId)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        assertThatThrownBy(() -> documentService.getDocumentById(documentId))
+                .isInstanceOf(DocumentNotFoundException.class)
+                .hasMessageContaining(String.valueOf(documentId));
+        
+        verify(documentRepository).findById(documentId);
+    }
+    
+    @Test
+    void deleteDocument_shouldDeleteDocumentFromMinioAndDatabase() throws Exception {
+        // Arrange
+        Long documentId = 1L;
+        Document document = new Document();
+        document.setId(documentId);
+        document.setUserId("user123");
+        document.setDocumentName("doc1.pdf");
+        document.setMinioPath("user123/doc1.pdf");
+        
+        when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
+        
+        // Act
+        documentService.deleteDocument(documentId);
+        
+        // Assert
+        verify(documentRepository).findById(documentId);
+        verify(minioClient).removeObject(any());
+        verify(documentRepository).delete(document);
+    }
+    
+    @Test
+    void updateDocument_shouldUpdateDocumentMetadata() {
+        // Arrange
+        Long documentId = 1L;
+        Document existingDocument = new Document();
+        existingDocument.setId(documentId);
+        existingDocument.setUserId("user123");
+        existingDocument.setDocumentName("old-name.pdf");
+        existingDocument.setTags(new HashSet<>(Arrays.asList("old-tag")));
+        
+        DocumentUploadRequest request = new DocumentUploadRequest();
+        request.setDocumentName("new-name.pdf");
+        request.setTags(new HashSet<>(Arrays.asList("new-tag1", "new-tag2")));
+        
+        Document updatedDocument = new Document();
+        updatedDocument.setId(documentId);
+        updatedDocument.setUserId("user123");
+        updatedDocument.setDocumentName("new-name.pdf");
+        updatedDocument.setTags(new HashSet<>(Arrays.asList("new-tag1", "new-tag2")));
+        
+        when(documentRepository.findById(documentId)).thenReturn(Optional.of(existingDocument));
+        when(documentRepository.save(any(Document.class))).thenReturn(updatedDocument);
+        
+        // Act
+        Document result = documentService.updateDocument(documentId, request);
+        
+        // Assert
+        assertThat(result).isEqualTo(updatedDocument);
+        
+        ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+        verify(documentRepository).save(documentCaptor.capture());
+        
+        Document capturedDocument = documentCaptor.getValue();
+        assertThat(capturedDocument.getDocumentName()).isEqualTo("new-name.pdf");
+        assertThat(capturedDocument.getTags()).containsExactlyInAnyOrder("new-tag1", "new-tag2");
     }
 }

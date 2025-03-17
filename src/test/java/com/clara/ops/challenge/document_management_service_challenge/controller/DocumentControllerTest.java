@@ -1,8 +1,9 @@
 package com.clara.ops.challenge.document_management_service_challenge.controller;
 
+import com.clara.ops.challenge.document_management_service_challenge.domain.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.domain.service.DocumentServiceInterface;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
-import com.clara.ops.challenge.document_management_service_challenge.model.Document;
-import com.clara.ops.challenge.document_management_service_challenge.service.DocumentService;
+import com.clara.ops.challenge.document_management_service_challenge.infraestructure.rest.DocumentController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DocumentControllerTest {
 
     @Mock
-    private DocumentService documentService;
+    private DocumentServiceInterface documentService;
 
     @InjectMocks
     private DocumentController documentController;
@@ -81,8 +81,6 @@ class DocumentControllerTest {
                 .andExpect(jsonPath("$.fileSize").value(12));
     }
     
-    // In the test class, update the searchDocuments_shouldReturnPageOfDocuments test method
-    
     @Test
     void searchDocuments_shouldReturnPageOfDocuments() throws Exception {
         // Arrange
@@ -119,7 +117,7 @@ class DocumentControllerTest {
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
         
-        // Act & Assert - use simpler assertions first to debug
+        // Act & Assert
         mockMvc.perform(get("/api/documents")
                 .param("userId", "user123")
                 .param("page", "0")
