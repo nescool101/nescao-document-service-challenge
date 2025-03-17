@@ -8,15 +8,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class DocumentNotFoundException extends RuntimeException {
-
-    public DocumentNotFoundException(String message) {
-        super(message);
-    }
-
-    public DocumentNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
-    
     public DocumentNotFoundException(Long documentId) {
         super("Document not found with id: " + documentId);
     }

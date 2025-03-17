@@ -4,6 +4,8 @@ import com.clara.ops.challenge.document_management_service_challenge.domain.mode
 import com.clara.ops.challenge.document_management_service_challenge.domain.service.DocumentServiceInterface;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DocumentUploadRequest;
 import com.clara.ops.challenge.document_management_service_challenge.dto.DownloadUrlResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,11 +21,13 @@ import java.util.HashSet;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
+@Tag(name = "Document Management", description = "API for document operations")
 public class DocumentController {
 
     private final DocumentServiceInterface documentService;
 
     @PostMapping
+    @Operation(summary = "Upload a new document", description = "Uploads a document with metadata and returns the created document")
     public ResponseEntity<Document> uploadDocument(
             @RequestParam("userId") String userId,
             @RequestParam("documentName") String documentName,
