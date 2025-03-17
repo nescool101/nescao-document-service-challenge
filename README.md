@@ -48,6 +48,7 @@ curl -X POST http://localhost:8080/api/documents \
   -F "metadata={\"userId\":\"user1\",\"documentName\":\"sample.pdf\",\"tags\":[\"tag1\",\"tag2\"]}" \
   -F "file=@/path/to/your/file.pdf"
 ```
+
 ![img.png](img/upload.png)![img_6.png](img/img_6.png)
 
 ### Search Documents
@@ -60,6 +61,7 @@ curl "http://localhost:8080/api/documents?userId=user1&documentName=sample&tags=
 curl "http://localhost:8080/api/documents?page=0&size=10"
 
 ```
+
 ![img_1.png](img/img_1.png)
 ![img_7.png](img/img_7.png)
 
@@ -70,8 +72,10 @@ curl "http://localhost:8080/api/documents?page=0&size=10"
 curl http://localhost:8080/api/documents/{documentId}/download
 
 ```
+
 ![img_8.png](img/img_8.png)
 ![img.png](img/download.png)
+
 ## Available Services
 
 - Document Management Service: http://localhost:8080 and the Method that you can consume(more info in swagger)
