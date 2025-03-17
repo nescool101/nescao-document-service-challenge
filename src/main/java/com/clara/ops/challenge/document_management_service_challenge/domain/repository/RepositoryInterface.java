@@ -1,15 +1,34 @@
-package com.clara.ops.challenge.document_management_service_challenge.repository;
+package com.clara.ops.challenge.document_management_service_challenge.domain.repository;
 
-import com.clara.ops.challenge.document_management_service_challenge.model.Document;
+import com.clara.ops.challenge.document_management_service_challenge.domain.model.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface DocumentRepository extends JpaRepository<Document, Long> {
+/**
+ * Repository interface for Document domain model in hexagonal architecture.
+ * This interface is part of the domain layer and defines the contract that
+ * infrastructure implementations must fulfill.
+ */
+public interface RepositoryInterface {
+    
+    /**
+     * Save a document
+     */
+    Document save(Document document);
+    
+    /**
+     * Find a document by its ID
+     */
+    Optional<Document> findById(Long id);
+    
+    /**
+     * Delete a document
+     */
+    void delete(Document document);
     
     /**
      * Find documents by user ID with pagination
@@ -31,9 +50,4 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
      */
     Page<Document> findByUserIdAndDocumentNameContainingAndTagsContaining(
             String userId, String documentName, String tag, Pageable pageable);
-            
-    /**
-     * Find a document by user ID and exact document name
-     */
-    Optional<Document> findByUserIdAndDocumentName(String userId, String documentName);
 }

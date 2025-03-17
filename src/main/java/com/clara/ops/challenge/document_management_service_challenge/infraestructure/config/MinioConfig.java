@@ -1,4 +1,4 @@
-package com.clara.ops.challenge.document_management_service_challenge.config;
+package com.clara.ops.challenge.document_management_service_challenge.infraestructure.config;
 
 import io.minio.MinioClient;
 import org.springframework.beans.factory.annotation.Value;
