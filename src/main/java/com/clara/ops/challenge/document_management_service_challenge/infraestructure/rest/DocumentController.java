@@ -6,6 +6,8 @@ import com.clara.ops.challenge.document_management_service_challenge.dto.Documen
 import com.clara.ops.challenge.document_management_service_challenge.dto.DownloadUrlResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.HashSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,66 +17,64 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.HashSet;
-
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
 @Tag(name = "Document Management", description = "API for document operations")
 public class DocumentController {
 
-    private final DocumentServiceInterface documentService;
+  private final DocumentServiceInterface documentService;
 
-    @PostMapping
-    @Operation(summary = "Upload a new document", description = "Uploads a document with metadata and returns the created document")
-    public ResponseEntity<Document> uploadDocument(
-            @RequestParam("userId") String userId,
-            @RequestParam("documentName") String documentName,
-            @RequestParam(value = "tags", required = false) String tags,
-            @RequestPart("file") MultipartFile file) {
-        
-        DocumentUploadRequest request = new DocumentUploadRequest();
-        request.setUserId(userId);
-        request.setDocumentName(documentName);
-        
-        if (tags != null && !tags.isEmpty()) {
-            request.setTags(new HashSet<>(Arrays.asList(tags.split(","))));
-        }
-        
-        Document document = documentService.uploadDocument(request, file);
-        return new ResponseEntity<>(document, HttpStatus.CREATED);
+  @PostMapping
+  @Operation(
+      summary = "Upload a new document",
+      description = "Uploads a document with metadata and returns the created document")
+  public ResponseEntity<Document> uploadDocument(
+      @RequestParam("userId") String userId,
+      @RequestParam("documentName") String documentName,
+      @RequestParam(value = "tags", required = false) String tags,
+      @RequestPart("file") MultipartFile file) {
+
+    DocumentUploadRequest request = new DocumentUploadRequest();
+    request.setUserId(userId);
+    request.setDocumentName(documentName);
+
+    if (tags != null && !tags.isEmpty()) {
+      request.setTags(new HashSet<>(Arrays.asList(tags.split(","))));
     }
 
-    @GetMapping
-    public ResponseEntity<Page<Document>> searchDocuments(
-            @RequestParam("userId") String userId,
-            @RequestParam(value = "documentName", required = false) String documentName,
-            @RequestParam(value = "tag", required = false) String tag,
-            @PageableDefault(size = 10) Pageable pageable) {
-        
-        Page<Document> documents = documentService.searchDocuments(userId, documentName, tag, pageable);
-        return ResponseEntity.ok(documents);
-    }
+    Document document = documentService.uploadDocument(request, file);
+    return new ResponseEntity<>(document, HttpStatus.CREATED);
+  }
 
-    @GetMapping("/{documentId}/download")
-    public ResponseEntity<DownloadUrlResponse> getDownloadUrl(@PathVariable Long documentId) {
-        String downloadUrl = documentService.generateDownloadUrl(documentId);
-        DownloadUrlResponse response = new DownloadUrlResponse(downloadUrl);
-        return ResponseEntity.ok(response);
-    }
-    
-    @DeleteMapping("/{documentId}")
-    public ResponseEntity<Void> deleteDocument(@PathVariable Long documentId) {
-        documentService.deleteDocument(documentId);
-        return ResponseEntity.noContent().build();
-    }
-    
-    @PutMapping("/{documentId}")
-    public ResponseEntity<Document> updateDocument(
-            @PathVariable Long documentId,
-            @RequestBody DocumentUploadRequest request) {
-        Document document = documentService.updateDocument(documentId, request);
-        return ResponseEntity.ok(document);
-    }
+  @GetMapping
+  public ResponseEntity<Page<Document>> searchDocuments(
+      @RequestParam("userId") String userId,
+      @RequestParam(value = "documentName", required = false) String documentName,
+      @RequestParam(value = "tag", required = false) String tag,
+      @PageableDefault(size = 10) Pageable pageable) {
+
+    Page<Document> documents = documentService.searchDocuments(userId, documentName, tag, pageable);
+    return ResponseEntity.ok(documents);
+  }
+
+  @GetMapping("/{documentId}/download")
+  public ResponseEntity<DownloadUrlResponse> getDownloadUrl(@PathVariable Long documentId) {
+    String downloadUrl = documentService.generateDownloadUrl(documentId);
+    DownloadUrlResponse response = new DownloadUrlResponse(downloadUrl);
+    return ResponseEntity.ok(response);
+  }
+
+  @DeleteMapping("/{documentId}")
+  public ResponseEntity<Void> deleteDocument(@PathVariable Long documentId) {
+    documentService.deleteDocument(documentId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/{documentId}")
+  public ResponseEntity<Document> updateDocument(
+      @PathVariable Long documentId, @RequestBody DocumentUploadRequest request) {
+    Document document = documentService.updateDocument(documentId, request);
+    return ResponseEntity.ok(document);
+  }
 }

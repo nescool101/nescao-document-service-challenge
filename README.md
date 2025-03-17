@@ -26,15 +26,21 @@ POSTGRESQL_PASSWORD=b
 MINIO_ROOT_USER=d
 MINIO_ROOT_PASSWORD=e
 ```
+
 3. also you can edit the envExample file that is in the docker directory.
 
-4. Start the application using Docker Compose:
+4. Go to your IDE settings and enable the values from the env
+
+5. Start the application using Docker Compose:
+
 ```
 docker-compose up --build
 ```
+
 ## API Usage
 
 ### Upload Document
+
 ```
 curl -X POST http://localhost:8080/api/documents \
   -H "Content-Type: multipart/form-data" \
@@ -43,6 +49,7 @@ curl -X POST http://localhost:8080/api/documents \
 ```
 
 ### Search Documents
+
 ```
 # Search with filters
 curl "http://localhost:8080/api/documents?userId=user1&documentName=sample&tags=tag1&page=0&size=10"
@@ -53,6 +60,7 @@ curl "http://localhost:8080/api/documents?page=0&size=10"
 ```
 
 ### Download Document
+
 ```
 # Get temporary download URL
 curl http://localhost:8080/api/documents/{documentId}/download
@@ -60,18 +68,22 @@ curl http://localhost:8080/api/documents/{documentId}/download
 ```
 
 ## Available Services
+
 - Document Management Service: http://localhost:8080
 - MinIO Console: http://localhost:9001
 - MinIO API: http://localhost:9000
 - PostgreSQL: localhost:5432
 
-
 ## Testing and Code Quality
+
 Run tests and generate coverage report with this command:
 ./mvnw clean test jacoco:report
 
+Run the spotless add-on to ident the application
+./mvnw spotless:apply
 
 ## Architecture
+
 This service follows a hexagonal architecture pattern as required in the Test description:
 
 - Domain layer: Core business logic and interfaces
@@ -79,6 +91,7 @@ This service follows a hexagonal architecture pattern as required in the Test de
 - Exception layer: Service exceptions for the expected errors
 
 ## Integrated Tools
+
 - Spring Boot: Pre-configured application framework by the test
 - Spring Data JPA: Database operations
 - MinIO: Object storage for documents
@@ -88,3 +101,4 @@ This service follows a hexagonal architecture pattern as required in the Test de
 - AssertJ: Fluent assertions in tests
 - Jacoco: Code coverage reporting
 - Spotless: Code formatting
+

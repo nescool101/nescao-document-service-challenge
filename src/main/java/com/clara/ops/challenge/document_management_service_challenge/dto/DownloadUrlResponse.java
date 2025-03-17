@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DownloadUrlResponse {
-    private String downloadUrl;
+  private String downloadUrl;
 }

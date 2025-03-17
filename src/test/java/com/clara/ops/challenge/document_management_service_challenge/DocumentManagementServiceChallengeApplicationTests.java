@@ -8,6 +8,7 @@ class DocumentManagementServiceChallengeApplicationTests {
 
   @Test
   void contextLoads() {
-    // This test will fail if the application context cannot start
+    // will fail if context does not load
   }
+
 }
