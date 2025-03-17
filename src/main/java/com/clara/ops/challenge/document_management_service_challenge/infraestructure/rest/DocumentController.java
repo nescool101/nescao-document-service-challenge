@@ -28,7 +28,9 @@ public class DocumentController {
   @PostMapping
   @Operation(
       summary = "Upload a new document",
-      description = "Uploads a document with metadata and returns the created document. Supports files up to 500MB.")
+      description =
+          "Uploads a document with metadata and returns the created document. Supports files up to"
+              + " 500MB.")
   public ResponseEntity<Document> uploadDocument(
       @RequestParam("userId") String userId,
       @RequestParam("documentName") String documentName,
