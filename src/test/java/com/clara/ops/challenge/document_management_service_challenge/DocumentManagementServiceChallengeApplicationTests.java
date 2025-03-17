@@ -10,5 +10,4 @@ class DocumentManagementServiceChallengeApplicationTests {
   void contextLoads() {
     // will fail if context does not load
   }
-
 }
