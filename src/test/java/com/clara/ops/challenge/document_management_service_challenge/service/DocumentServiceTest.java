@@ -21,6 +21,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -153,7 +160,7 @@ class DocumentServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> documentService.uploadDocument(request, file))
         .isInstanceOf(DocumentUploadException.class)
-        .hasMessageContaining("Failed to upload document");
+        .hasMessageContaining("Failed to read file stream");
 
     verifyNoInteractions(documentRepository);
   }
@@ -416,5 +423,89 @@ class DocumentServiceTest {
     Document capturedDocument = documentCaptor.getValue();
     assertThat(capturedDocument.getDocumentName()).isEqualTo("new-name.pdf");
     assertThat(capturedDocument.getTags()).containsExactlyInAnyOrder("new-tag1", "new-tag2");
+  }
+
+  // THIS TEST ARE VALIDATING 10 concurrent uploads as required:
+
+  @Test
+  void uploadDocument_shouldHandleMultipleConcurrentUploads() throws Exception {
+    // Arrange
+    int concurrentUploads = 10;
+    
+    // Mock repository to return a document with the ID matching the thread number
+    when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
+      Document doc = invocation.getArgument(0);
+      // Set an ID based on the thread name to verify each upload completes
+      long threadId = Long.parseLong(Thread.currentThread().getName().replaceAll("\\D+", ""));
+      doc.setId(threadId);
+      return doc;
+    });
+    
+    // Create a thread pool with the number of concurrent uploads
+    ExecutorService executorService = Executors.newFixedThreadPool(concurrentUploads);
+    CountDownLatch latch = new CountDownLatch(concurrentUploads);
+    List<Future<Document>> futures = new ArrayList<>();
+    
+    // Act - Submit upload tasks to the thread pool
+    for (int i = 0; i < concurrentUploads; i++) {
+      final int uploadIndex = i;
+      
+      // Create a unique thread name for each upload
+      ThreadFactory threadFactory = r -> {
+        Thread t = new Thread(r);
+        t.setName("upload-thread-" + uploadIndex);
+        return t;
+      };
+      
+      ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor(threadFactory);
+      
+      Future<Document> future = singleThreadExecutor.submit(() -> {
+        try {
+          // Create a unique document for each thread
+          DocumentUploadRequest request = new DocumentUploadRequest();
+          request.setUserId("user" + uploadIndex);
+          request.setDocumentName("document" + uploadIndex + ".pdf");
+          request.setTags(new HashSet<>(Arrays.asList("tag" + uploadIndex)));
+          
+          // Create a mock file with some content
+          byte[] content = ("PDF content for document " + uploadIndex).getBytes();
+          MultipartFile file = new MockMultipartFile(
+              "file", 
+              "document" + uploadIndex + ".pdf", 
+              "application/pdf", 
+              content);
+          
+          // Upload the document
+          Document result = documentService.uploadDocument(request, file);
+          latch.countDown();
+          return result;
+        } catch (Exception e) {
+          latch.countDown();
+          throw e;
+        } finally {
+          singleThreadExecutor.shutdown();
+        }
+      });
+      
+      futures.add(future);
+    }
+    
+    // Wait for all uploads to complete or timeout after 30 seconds
+    boolean allUploadsCompleted = latch.await(30, TimeUnit.SECONDS);
+    executorService.shutdown();
+    
+    // Assert
+    assertThat(allUploadsCompleted).isTrue();
+    
+    // Verify all uploads completed successfully
+    for (int i = 0; i < concurrentUploads; i++) {
+      Document result = futures.get(i).get(); // This will throw an exception if the upload failed
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isEqualTo(i);
+    }
+    
+    // Verify the correct number of uploads were processed
+    verify(minioClient, times(concurrentUploads)).putObject(any(PutObjectArgs.class));
+    verify(documentRepository, times(concurrentUploads)).save(any(Document.class));
   }
 }

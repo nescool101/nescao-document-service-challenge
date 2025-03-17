@@ -12,6 +12,9 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,9 @@ public class DocumentService implements DocumentServiceInterface {
   public static final String CONTENT_TYPE_PDF = "application/pdf";
   private final MinioClient minioClient;
   private final RepositoryInterface documentRepository;
+  
+  // Buffer size for streaming uploads (8KB chunks)
+  private static final int BUFFER_SIZE = 8 * 1024;
 
   @Value("${minio.bucket.name}")
   private String bucketName;
@@ -49,10 +55,13 @@ public class DocumentService implements DocumentServiceInterface {
 
     String minioPath = generateMinioPath(request.getUserId(), request.getDocumentName());
 
-    try {
+    try (InputStream fileInputStream = new BufferedInputStream(file.getInputStream(), BUFFER_SIZE)) {
+      // Use streaming to handle large files without loading them entirely into memory
       minioClient.putObject(
-          PutObjectArgs.builder().bucket(bucketName).object(minioPath).stream(
-                  file.getInputStream(), file.getSize(), -1)
+          PutObjectArgs.builder()
+              .bucket(bucketName)
+              .object(minioPath)
+              .stream(fileInputStream, file.getSize(), -1)
               .contentType(CONTENT_TYPE_PDF)
               .build());
 
@@ -66,6 +75,9 @@ public class DocumentService implements DocumentServiceInterface {
       document.setCreatedAt(LocalDateTime.now());
 
       return documentRepository.save(document);
+    } catch (IOException e) {
+      log.error("Error reading file stream", e);
+      throw new DocumentUploadException("Failed to read file stream", e);
     } catch (Exception e) {
       log.error("Error uploading document", e);
       throw new DocumentUploadException("Failed to upload document", e);
