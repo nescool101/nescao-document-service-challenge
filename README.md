@@ -48,7 +48,7 @@ curl -X POST http://localhost:8080/api/documents \
   -F "metadata={\"userId\":\"user1\",\"documentName\":\"sample.pdf\",\"tags\":[\"tag1\",\"tag2\"]}" \
   -F "file=@/path/to/your/file.pdf"
 ```
-![img_6.png](img/img_6.png)
+![img.png](img/upload.png)![img_6.png](img/img_6.png)
 
 ### Search Documents
 
@@ -71,7 +71,7 @@ curl http://localhost:8080/api/documents/{documentId}/download
 
 ```
 ![img_8.png](img/img_8.png)
-
+![img.png](img/download.png)
 ## Available Services
 
 - Document Management Service: http://localhost:8080 and the Method that you can consume(more info in swagger)
@@ -80,6 +80,8 @@ curl http://localhost:8080/api/documents/{documentId}/download
 - MinIO API: http://localhost:9000
 - PostgreSQL: localhost:5432
 - ![img_3.png](img/img_3.png)
+- ![img_1.png](img/document.png)
+- ![img_2.png](img/tags.png)
 - Apidocs: http://localhost:8080/v3/api-docs
 - ![img_4.png](img/img_4.png)
 - Swagger: http://localhost:8080/swagger-ui/index.html#/
