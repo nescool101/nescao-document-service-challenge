@@ -64,3 +64,27 @@ curl http://localhost:8080/api/documents/{documentId}/download
 - MinIO Console: http://localhost:9001
 - MinIO API: http://localhost:9000
 - PostgreSQL: localhost:5432
+
+
+## Testing and Code Quality
+Run tests and generate coverage report with this command:
+./mvnw clean test jacoco:report
+
+
+## Architecture
+This service follows a hexagonal architecture pattern as required in the Test description:
+
+- Domain layer: Core business logic and interfaces
+- Infrastructure layer: Config persistence rest and storage
+- Exception layer: Service exceptions for the expected errors
+
+## Integrated Tools
+- Spring Boot: Pre-configured application framework by the test
+- Spring Data JPA: Database operations
+- MinIO: Object storage for documents
+- Lombok: Reducing boilerplate code
+- JUnit 5: Unit and integration testing
+- Mockito: Mocking dependencies in tests
+- AssertJ: Fluent assertions in tests
+- Jacoco: Code coverage reporting
+- Spotless: Code formatting
